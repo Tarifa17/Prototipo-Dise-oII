@@ -21,8 +21,11 @@ public class OrderManager : MonoBehaviour
 
     void CheckOrder()
     {
-        // Ordenar los objetos por su posición en el eje X (de izquierda a derecha)
-        var ordered = items.OrderBy(i => i.transform.position.x).ToArray();
+        // Ordenar los objetos primero por X, luego por Y
+        var ordered = items
+            .OrderBy(i => i.transform.position.x)
+            .ThenBy(i => i.transform.position.y)
+            .ToArray();
 
         bool isOrdered = true;
 
@@ -36,12 +39,15 @@ public class OrderManager : MonoBehaviour
             }
         }
 
-        // Si están en el orden correcto, comprobar que haya espacio entre ellos
+        // Si el orden es correcto, comprobar que haya espacio suficiente entre todos
         if (isOrdered)
         {
             for (int i = 0; i < items.Length - 1; i++)
             {
-                float distance = Vector3.Distance(items[i].transform.position, items[i + 1].transform.position);
+                Vector2 posA = new Vector2(items[i].transform.position.x, items[i].transform.position.y);
+                Vector2 posB = new Vector2(items[i + 1].transform.position.x, items[i + 1].transform.position.y);
+                float distance = Vector2.Distance(posA, posB);
+
                 if (distance < minDistance)
                 {
                     isOrdered = false; // Están demasiado cerca

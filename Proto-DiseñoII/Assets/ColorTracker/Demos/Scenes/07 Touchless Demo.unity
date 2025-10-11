@@ -579,8 +579,8 @@ MonoBehaviour:
   colorTargets:
   - color:
       serializedVersion: 2
-      rgba: 6580669
-    tolerance: 16.9
+      rgba: 5332654
+    tolerance: 12.6
   enableColorMap: 0
   enableColorTrack: 1
   colorMapPointSpacing: 1

@@ -2,37 +2,26 @@
 using System.Collections.Generic;
 using System;
 
-/// <summary>
-/// The Vexpot.Integration namespace contains all scripts used to achieve an easy integration
-/// with the Unity 3D editor.
-/// </summary>
 namespace Vexpot.Integration
 {
-    /// <summary>
-    /// Implements the tools for displaying the <see cref="TrackerResult"/> on Unity UI.
-    /// </summary>
     [AddComponentMenu("Vexpot/ColorTrackerRenderer")]
     public class ColorTrackerRenderer : MonoBehaviour
     {
-        /// <summary>
-        /// The canvas to display the tracks.
-        /// </summary>
         public Canvas canvas;
-        /// <summary>
-        /// The object used as pointer graphic.
-        /// </summary>
         public GameObject graphicModel;
-        /// <summary>
-        /// A reference to the GameObject containing the tracker panel.
-        /// </summary>
         public ColorTrackerPanel trackerPanel;
 
         private ColorTracker _tracker;
         private List<GameObject> _graphics;
         private Vector3 _reusableScreenPosition;
 
+        // 👇 Variables nuevas
+        private TouchableItem grabbedItem;
+        private Camera mainCamera;
+
         void Awake()
         {
+            mainCamera = Camera.main;
             if (ValidateComponents())
             {
                 _graphics = new List<GameObject>();
@@ -116,13 +105,13 @@ namespace Vexpot.Integration
 
             if (!_tracker.isRunning)
             {
-                DestroyPreviousGraphics();             
+                DestroyPreviousGraphics();
                 return;
             }
 
             List<TrackerResult> result = _tracker.Compute();
 
-            if(_graphics.Count != result.Count)
+            if (_graphics.Count != result.Count)
             {
                 DestroyPreviousGraphics();
                 CreateNewGraphics(result.Count);
@@ -137,14 +126,57 @@ namespace Vexpot.Integration
                     CoordinateMapper.ConvertInputToScreen(_tracker.input, target.center, ref _reusableScreenPosition);
                     CoordinateMapper.ConvertScreenToUI(_reusableScreenPosition, actual.GetComponent<RectTransform>());
                     actual.SetActive(true);
+
+                    // 👇 Detección y movimiento del objeto (solo X e Y)
+                    if (i == 0) // usar solo el primer puntero
+                    {
+                        Ray ray = mainCamera.ScreenPointToRay(_reusableScreenPosition);
+                        RaycastHit hit;
+
+                        if (Physics.Raycast(ray, out hit))
+                        {
+                            var touchable = hit.collider.GetComponent<TouchableItem>();
+                            if (touchable != null)
+                            {
+                                if (grabbedItem == null)
+                                    grabbedItem = touchable;
+
+                                if (grabbedItem != null)
+                                {
+                                    // Convertir a coordenadas de mundo manteniendo la profundidad original (Z)
+                                    float distance = Vector3.Distance(mainCamera.transform.position, grabbedItem.transform.position);
+                                    Vector3 worldPoint = mainCamera.ScreenToWorldPoint(
+                                        new Vector3(
+                                            _reusableScreenPosition.x,
+                                            _reusableScreenPosition.y,
+                                            distance
+                                        )
+                                    );
+
+                                    // 🔹 Movimiento limitado a X e Y
+                                    grabbedItem.transform.position = new Vector3(
+                                        worldPoint.x,
+                                        worldPoint.y,
+                                        grabbedItem.transform.position.z
+                                    );
+                                }
+                            }
+                            else
+                            {
+                                grabbedItem = null;
+                            }
+                        }
+                        else
+                        {
+                            grabbedItem = null;
+                        }
+                    }
                 }
                 else
                 {
                     actual.SetActive(false);
                 }
-            } 
+            }
         }
-      
     }
 }
-
