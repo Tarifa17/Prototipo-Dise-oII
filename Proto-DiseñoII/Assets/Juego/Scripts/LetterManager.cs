@@ -13,10 +13,15 @@ public class LetterContainer : MonoBehaviour
 
     private bool filled = false; // Para evitar múltiples detecciones
 
+    private ScoreManager scoreManager;
+
     private void Start()
     {
         if (contenedorRenderer == null)
             contenedorRenderer = GetComponent<Renderer>();
+        scoreManager = FindObjectOfType<ScoreManager>();
+        if (scoreManager == null)
+            Debug.LogWarning("⚠️ No se encontró un ScoreManager en la escena.");
     }
 
     private void OnTriggerEnter(Collider other)
@@ -38,6 +43,9 @@ public class LetterContainer : MonoBehaviour
                 if (correctMaterial != null && contenedorRenderer != null)
                     contenedorRenderer.material = correctMaterial;
 
+                if (scoreManager != null)
+                    scoreManager.AddPoints(20);
+
                 // Destruir la letra
                 Destroy(other.gameObject);
 
@@ -46,7 +54,15 @@ public class LetterContainer : MonoBehaviour
             else
             {
                 Debug.Log("❌ Incorrecto -10 puntos (" + letra.letterName + ")");
+
+                if (scoreManager != null)
+                    scoreManager.SubtractPoints(10);
             }
         }
     }
+    public bool IsFilled()
+    {
+        return filled;
+    }
+
 }
